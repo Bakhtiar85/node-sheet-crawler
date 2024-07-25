@@ -5,6 +5,8 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
+const { submitForm } = require('./src/puppeteerForm');
+
 // Set up Google Sheets API
 const sheets = google.sheets('v4');
 const auth = new google.auth.GoogleAuth({
@@ -19,7 +21,7 @@ let lastRow = 0; // Keeps track of the last row read
 async function checkSheet() {
     try {
         const client = await auth.getClient();
-        const range = `${sheetName}!A${lastRow + 1}:D`; // Adjust the range to start from the next row(s)
+        const range = `${sheetName}!A${lastRow + 1}:E`; // Adjust the range to start from the next row(s)
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId,
             range,
@@ -29,18 +31,29 @@ async function checkSheet() {
         const rows = response.data.values;
         if (rows && rows.length > 0) {
             for (const row of rows) {
-                console.log(`New entry: ${row.join(', ')}`);
-                // Log this information to your server or database
+                const [timestamp, fullName, email, zipcode, age] = row;
+                if (timestamp !== "Timestamp") {
+                    try {
+                        const result = await submitForm(fullName, email, zipcode, age);
+                        console.log("Posted Data via PUPPETEER: ", result);
+                    } catch (submitError) {
+                        console.error('Error submitting form:', submitError);
+                    }
+                }
             }
             lastRow += rows.length; // Update lastRow to reflect the number of new rows read
         }
+        // Poll the Google Sheet every 30 seconds
+        setTimeout(() => {
+            console.log("calling sheet again after 30 seconds!!!")
+            checkSheet();
+        }, 30000);
     } catch (error) {
         console.error('Error accessing Google Sheets:', error);
     }
 }
 
-// Poll the Google Sheet every 15 seconds
-setInterval(checkSheet, 15000);
+checkSheet();
 
 // Start the Express server
 app.listen(port, () => {
