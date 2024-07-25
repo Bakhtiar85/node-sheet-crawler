@@ -1,0 +1,5 @@
+/node_modules
+/misc
+.env
+# provide your service-account-key json file in root dir
+service-account-key.json 
