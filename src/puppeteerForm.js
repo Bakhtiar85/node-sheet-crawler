@@ -10,7 +10,7 @@ async function submitForm(fullName = "f_name", email = "me@mail.com", zipcode = 
         console.log('Page loaded:', resp.status(), resp.url());
 
         // Select input fields
-        const inputs = await page.$$('div[role="list"] input');
+        const inputs = await page.$$('form input');
         console.log('Inputs found:', inputs.length);
 
         if (inputs.length < 4) {
@@ -35,16 +35,18 @@ async function submitForm(fullName = "f_name", email = "me@mail.com", zipcode = 
 
         // Submit the form
         // Replace with the actual selector for the submit button
-        await page.click('div[aria-label="Submit"]');
+        await page.click('button[type="Submit"]');
         console.log('Form submitted.');
 
-        // Wait for the form to be submitted and navigation to complete
-        try {
-            await page.waitForNavigation({ waitUntil: 'networkidle2' });
-            console.log('Form submission confirmed.');
-        } catch (confirmError) {
-            console.error('Confirmation failed:', confirmError);
-        }
+        // Wait for the form fields to be empty
+        await page.waitForFunction(
+            () => {
+                const inputs = document.querySelectorAll('input');
+                return Array.from(inputs).every(input => input.value === '');
+            },
+            { timeout: 60000 } // Adjust timeout as needed
+        );
+        console.log('Form fields are now empty.');
 
     } catch (error) {
         console.error('Error during form submission:', error);
