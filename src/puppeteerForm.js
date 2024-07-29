@@ -6,8 +6,8 @@ let browser;
 async function verifyProxy() {
     try {
         const data = await request({
-            url: 'http://ipv4.webshare.io/',
-            proxy: 'http://wxvulwqk-rotate:q8jvoil91b2g@p.webshare.io:80'
+            url: `${process.env.PROXY_PROTOCOL}://${process.env.PROXY_URL}/`,
+            proxy: `${process.env.PROXY_PROTOCOL}://${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@${process.env.PROXY_SERVER}:${process.env.PROXY_PORT}`
         });
         console.log('Proxy verified:', data);
         return true;
@@ -23,14 +23,14 @@ async function submitForm(fullName = "f_name", email = "me@mail.com", zipcode = 
         if (!proxyVerified) throw new Error('Proxy verification failed');
 
         browser = await puppeteer.launch({
-            headless: true,
-            args: ['--proxy-server=p.webshare.io:80'],
+            headless: process.env.HEADLESS === 'true',
+            args: [`--proxy-server=${process.env.PROXY_SERVER}:${process.env.PROXY_PORT}`],
         }); // Set to false for debugging
         const page = await browser.newPage();
 
         await page.authenticate({
-            username: 'wxvulwqk-rotate',
-            password: 'q8jvoil91b2g'
+            username: process.env.PROXY_USERNAME,
+            password: process.env.PROXY_PASSWORD
         });
 
         // Go to the target form URL
