@@ -6,6 +6,7 @@ const app = express();
 const port = 3000;
 
 const { submitForm } = require('./src/puppeteerForm');
+const is_testing_url = process.env.IS_TESTING_URL;
 
 // Set up Google Sheets API
 const sheets = google.sheets('v4');
@@ -36,7 +37,7 @@ async function checkSheet() {
                     let success = false;
                     for (let attempt = 0; attempt < 3; attempt++) {
                         try {
-                            const result = await submitForm(fullName, email, zipcode, age);
+                            const result = await submitForm(fullName, email, zipcode, age, false);
                             console.log("Posted Data via PUPPETEER: ", result);
                             success = true;
                             break;
@@ -60,8 +61,11 @@ async function checkSheet() {
         console.error('Error accessing Google Sheets:', error);
     }
 }
-
-checkSheet();
+if (is_testing_url === 'true') {
+    submitForm('fullName', 'email', 'zipcode', 'age', is_testing_url);
+} else {
+    checkSheet();
+}
 
 // Start the Express server
 app.listen(port, () => {
