@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer');
 const request = require('request-promise');
 
 let browser;
+let puppeteerProxy;
 
 async function verifyProxy() {
     try {
@@ -9,6 +10,7 @@ async function verifyProxy() {
             url: `${process.env.PROXY_PROTOCOL}://${process.env.PROXY_URL}/`,
             proxy: `${process.env.PROXY_PROTOCOL}://${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@${process.env.PROXY_SERVER}:${process.env.PROXY_PORT}`
         });
+        puppeteerProxy = data;
         console.log('Proxy verified:', data);
         return true;
     } catch (error) {
@@ -24,7 +26,9 @@ async function submitForm(fullName = "f_name", email = "me@mail.com", zipcode = 
 
         browser = await puppeteer.launch({
             headless: process.env.HEADLESS === 'true',
-            args: [`--proxy-server=${process.env.PROXY_SERVER}:${process.env.PROXY_PORT}`],
+            args: [
+                `--proxy-server=${process.env.PROXY_SERVER}:${process.env.PROXY_PORT}`,
+            ],
         }); // Set to false for debugging
         const page = await browser.newPage();
 
@@ -70,18 +74,18 @@ async function submitForm(fullName = "f_name", email = "me@mail.com", zipcode = 
         await page.waitForFunction(
             () => {
                 const inputs = document.querySelectorAll('input');
-                return Array.from(inputs).every(input => input.value === '');
-            },
-            { timeout: 60000 } // Adjust timeout as needed
+                return Array.from(inputs).slice(0, 4).every(input => input.value === '');
+            }
         );
-        await browser.close();
 
         console.log('Form fields are now empty.');
-        return `Form submitted for ${fullName}, ${email}, ${zipcode}, ${age}`;
+        return `Form submitted for ${fullName}, ${email}, ${zipcode}, ${age}, ${puppeteerProxy}`;
     } catch (error) {
         console.error('Error during form submission:', error);
         if (browser) await browser.close();
         throw error;
+    } finally {
+        await browser.close();
     }
 }
 
