@@ -33,11 +33,19 @@ async function checkSheet() {
             for (const row of rows) {
                 const [timestamp, fullName, email, zipcode, age] = row;
                 if (timestamp !== "Timestamp") {
-                    try {
-                        const result = await submitForm(fullName, email, zipcode, age);
-                        console.log("Posted Data via PUPPETEER: ", result);
-                    } catch (submitError) {
-                        console.error('Error submitting form:', submitError);
+                    let success = false;
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                        try {
+                            const result = await submitForm(fullName, email, zipcode, age);
+                            console.log("Posted Data via PUPPETEER: ", result);
+                            success = true;
+                            break;
+                        } catch (submitError) {
+                            console.error(`Error submitting form (attempt ${attempt + 1}):`, submitError);
+                        }
+                    }
+                    if (!success) {
+                        console.error('Failed to submit form after 3 attempts');
                     }
                 }
             }
@@ -45,7 +53,7 @@ async function checkSheet() {
         }
         // Poll the Google Sheet every 30 seconds
         setTimeout(() => {
-            console.log("calling sheet again after 30 seconds!!!")
+            console.log("calling sheet again after 30 seconds!!!");
             checkSheet();
         }, 30000);
     } catch (error) {
