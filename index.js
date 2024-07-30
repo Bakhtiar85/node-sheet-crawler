@@ -62,7 +62,7 @@ async function checkSheet() {
     }
 }
 if (is_testing_url === 'true') {
-    submitForm('fullName', 'email', 'zipcode', 'age', is_testing_url);
+    submitForm('fullName', 'email', '20147', 'age', is_testing_url);
 } else {
     checkSheet();
 }
