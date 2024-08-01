@@ -1,17 +1,17 @@
 const axios = require('axios');
 let proxy = {};
-let randomIndex;
+let proxyToken = process.env.WEBSHARE_API_KEY;
 async function getProxyForLocation(country, city) {
     const url = new URL('https://proxy.webshare.io/api/v2/proxy/list/');
     url.searchParams.append('mode', 'direct');
     url.searchParams.append('page', '1');
     url.searchParams.append('page_size', '25');
     url.searchParams.append('country_code__in', 'US');
-
+    // console.log("proxyToken", proxyToken)
     try {
         const response = await axios.get(url.href, {
             headers: {
-                Authorization: `Token c76z2m1rzb0zzv7rw1fca11qr9adpd9n8f4jds85`
+                Authorization: `Token ${String(proxyToken)}`
             }
         });
 
@@ -26,7 +26,7 @@ async function getProxyForLocation(country, city) {
                 const randomIndex = Math.floor(Math.random() * response.data.results.length);
                 proxy = response.data.results[randomIndex];
             }
-            console.log("SKJL:>>>>>>>>", proxy)
+            // console.log("SKJL:>>>>>>>>", proxy)
             return {
                 server: proxy.proxy_address,
                 port: proxy.port,
