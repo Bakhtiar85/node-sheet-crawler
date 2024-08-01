@@ -38,7 +38,7 @@ async function checkSheet() {
                     for (let attempt = 0; attempt < 3; attempt++) {
                         try {
                             const result = await submitForm(fullName, email, zipcode, age, false);
-                            console.log("Posted Data via PUPPETEER: ", result);
+                            // console.log("Posted Data via PUPPETEER: ", result);
                             success = true;
                             break;
                         } catch (submitError) {
@@ -54,7 +54,7 @@ async function checkSheet() {
         }
         // Poll the Google Sheet every 30 seconds
         setTimeout(() => {
-            console.log("calling sheet again after 30 seconds!!!");
+            // console.log("calling sheet again after 30 seconds!!!");
             checkSheet();
         }, 30000);
     } catch (error) {

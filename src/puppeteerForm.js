@@ -6,7 +6,7 @@ const { setupBrowser } = require('./browserService');
 
 let browser, page;
 let puppeteerProxy;
-const waitTime = Math.random() * 100000 + 50000; // 50s to 150s
+const waitTime = Math.random() * 100000; // 50s to 150s
 
 // Array of possible referrer URLs
 const referrers = [
@@ -23,7 +23,7 @@ async function submitForm(fullName = "f_name", email = "me@mail.com", zipcode = 
         if (!proxy) throw new Error('No proxy found for location');
 
         ({ browser, page } = await setupBrowser(proxy));
-        // console.log("browser, page :>>", { browser, page })
+        console.log("browser, page, PROxY :>>", { browser, page, proxy })
 
         // Select a random referrer
         const randomReferrer = referrers[Math.floor(Math.random() * referrers.length)];
@@ -47,11 +47,11 @@ async function submitForm(fullName = "f_name", email = "me@mail.com", zipcode = 
             for (const event of events) {
                 if (event === 'click') {
                     // Random click actions
-                    for (let i = 0; i < 3; i++) {
+                    for (let i = 0; i < 53; i++) {
                         await page.keyboard.down('Control');
                         await page.mouse.click(Math.random() * page.viewport().width, Math.random() * page.viewport().height);
                         await page.keyboard.up('Control');
-                        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000)); // wait between 1 to 3 seconds
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 200)); // wait between 1 to 3 seconds
                     }
                 } else if (event === 'scroll') {
                     // Random scroll actions
@@ -112,7 +112,7 @@ async function submitForm(fullName = "f_name", email = "me@mail.com", zipcode = 
                 }
             );
         }
-        console.log('Form fields are now empty.');
+        // console.log('Form fields are now empty.');
         return `Form submitted for ${fullName}, ${email}, ${zipcode}, ${age}, ${puppeteerProxy}`;
     } catch (error) {
         console.error('Error during form submission:', error);

@@ -7,7 +7,7 @@ async function zipToCountryCity(zipCode) {
     try {
         const response = await axios.get(url);
 
-        console.log("Zipcode resp : >>>>>>>>>>>", response.data);
+        // console.log("Zipcode resp : >>>>>>>>>>>", response.data);
         // Extract country and city from the response
         const country = response.data['country abbreviation'];
         // The API returns an array of places. We'll use the first one.

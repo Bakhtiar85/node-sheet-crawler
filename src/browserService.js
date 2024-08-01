@@ -6,7 +6,7 @@ async function setupBrowser(proxy) {
     const browser = await puppeteer.launch({
         headless: process.env.HEADLESS === 'true',
         args: [
-            `--proxy-server=${proxy.server}:${proxy.port}`,
+            `--proxy-server=http://p.webshare.io:${proxy.port}`,
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-gpu',
@@ -21,7 +21,7 @@ async function setupBrowser(proxy) {
         username: proxy.username,
         password: proxy.password
     });
-    console.log('Page authenticated with proxy : >>>>>>>>>>>', proxy);
+    // console.log('Page authenticated with proxy : >>>>>>>>>>>', proxy);
 
     const userAgent = new UserAgent({ deviceCategory: 'desktop' });
     const randomUserAgent = userAgent.toString();
