@@ -13,23 +13,14 @@ async function zipToCountryCity(zipCode) {
         // The API returns an array of places. We'll use the first one.
         const city = response.data.places[0]['place name'];
 
+        if (!country || !city) throw new Error('Location data incomplete');
+        
         return { country, city };
     } catch (error) {
         console.error('Error fetching location data:', error.message);
         // If there's an error, return null or a default value
         return null;
     }
-}
-
-// Helper function to convert country abbreviation to full name
-function getFullCountryName(countryCode) {
-    const countries = {
-        'US': 'United States',
-        'CA': 'Canada',
-        'GB': 'United Kingdom',
-        // Add more country codes and names as needed
-    };
-    return countries[countryCode] || countryCode;
 }
 
 module.exports = { zipToCountryCity };
