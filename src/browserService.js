@@ -5,7 +5,8 @@ async function setupBrowser(proxy, botId) {
     const browser = await puppeteer.launch({
         headless: process.env.HEADLESS === 'true',
         args: [
-            `--proxy-server=http://p.webshare.io:${proxy.port}`,
+            // `--proxy-server=http://p.webshare.io:${proxy.port}`, // with 7$ plan
+            `--proxy-server=${proxy.server}:${proxy.port}`, // with 10 free proxies
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-gpu',
@@ -42,10 +43,20 @@ async function setupBrowser(proxy, botId) {
     await page.setRequestInterception(true);
 
     page.on('request', (request) => {
+        const url = request.url();
+        const resourceType = request.resourceType();
+
+        // Modify headers for all requests
         const headers = request.headers();
         headers['sec-ch-ua-platform'] = `"${platform}"`;
         headers['user-agent'] = userAgent;
-        request.continue({ headers });
+
+        // Block specific resource types
+        if (['stylesheet', 'image', 'font', 'media'].includes(resourceType)) {
+            request.abort();
+        } else {
+            request.continue({ headers });
+        }
     });
 
     return { browser, page };

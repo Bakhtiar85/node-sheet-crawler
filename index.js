@@ -20,8 +20,12 @@ function createNewBot() {
 }
 
 app.get('/spawn', (req, res) => {
-    const botId = createNewBot();
-    res.send(`Spawned new bot with ID: ${botId}`);
+    if (bots.length !== 1) { // must accept only one bot now
+        const botId = createNewBot();
+        res.send(`Spawned new bot with ID: ${botId}`);
+    } else {
+        res.send(`Only 1 bot is allowed`);
+    }
 });
 
 app.get('/status', (req, res) => {

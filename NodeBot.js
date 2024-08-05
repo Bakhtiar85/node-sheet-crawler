@@ -7,6 +7,10 @@ const { setupBrowser } = require('./src/browserService');
 const { submitForm } = require('./src/puppeteerForm');
 const { getValues } = require('./state');
 
+const is_testing_url = process.env.IS_TESTING_URL === 'true';
+let countSuccess = 0;
+let failedEntries = [];
+
 class Bot {
     constructor(spreadsheetId, sheetName, botId) {
         this.spreadsheetId = spreadsheetId;
@@ -58,14 +62,14 @@ class Bot {
                     browserInstance = await setupBrowser(proxy, this.botId);
                     // console.log(`Bot ${this.botId}: Browser setup complete`);
                     if (!browserInstance) throw new Error('No browser is setup');
-
+                    
                     await submitForm(fullName, phone, zipcode, age, false, countryCityInfo, this.botId, browserInstance);
                     success = true;
                     break;
                 } catch (submitError) {
                     console.error(`Bot ${this.botId}: Error submitting form (attempt ${attempt + 1}):`, submitError);
                 } finally {
-                    if (browserInstance) {
+                    if (browserInstance && !is_testing_url) {
                         let { browser } = browserInstance
                         await browser.close();
                     }
@@ -73,11 +77,12 @@ class Bot {
             }
 
             if (!success) {
-                console.error(`Bot ${this.botId}: Failed to submit form after maximum attempts`);
-                console.log(`Bot ${this.botId}: Failed values:`, { phone, zipcode });
+                console.error(`Bot ${this.botId}: Failed to submit form after maximum attempts VALUES:`, { phone, zipcode });
+                failedEntries.push({ phone, zipcode });
             } else {
                 const values = getValues();
-                console.log(`Bot ${this.botId}: Entry Submitted on dashboard:`, { phone, zipcode, values });
+                countSuccess++;
+                // console.log(`Bot ${this.botId}: Entry Submitted on dashboard:`, { phone, zipcode, values });
             }
         } catch (error) {
             console.error(`Bot ${this.botId}: Error processing row:`, error);
@@ -89,10 +94,16 @@ class Bot {
         const rows = await this.fetchSheetData(range);
 
         if (rows.length > 0) {
+            console.log(`Process for ${rows.length} rows started`)
+            console.time(`Complete Time taken for processing ${rows.length}`)
             for (const row of rows) {
+                console.time('Time taken to process single entry (include browser info, os and ip chang)');
                 await this.processRow(row);
+                console.timeEnd('Time taken to process single entry (include browser info, os and ip chang)');
                 this.lastRow++;
             }
+            console.timeEnd(`Complete Time taken for processing ${rows.length}`, " ::: Success rows inserted: ", countSuccess)
+            console.log("Failed Entires: ", JSON.stringify(failedEntries))
         }
 
         setTimeout(() => {
@@ -103,7 +114,12 @@ class Bot {
 
     start() {
         console.log(`Bot ${this.botId}: Starting`);
-        this.checkSheet();
+        if (is_testing_url) {
+            let testRow = ["2024-08-05 12:00:00", "John Doe", "123-456-7890", "90210", 30];
+            this.processRow(testRow);
+        } else {
+            this.checkSheet();
+        }
     }
 }
 

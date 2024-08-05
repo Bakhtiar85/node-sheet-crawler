@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 
-const waitTime = Math.random() * 100; // 50s to 150s
+const waitTime = Math.random() * 20 + 50; // 50s to 100s
 const maxRetriesOnForm = 2;
 // Array of possible referrer URLs
 const referrers = [
@@ -19,35 +19,33 @@ async function submitForm(fullName = "f_name", phone = "(555) 890-1234", zipcode
         if (!is_testing_url) {
             // await page.reload({ waitUntil: 'networkidle2' });
 
-            const events = ['click', 'scroll', 'mouse'];
+            const events = ['click', 'mouse'];
             events.sort(() => Math.random() - 0.5);
 
             for (const event of events) {
-                if (event === 'click') {
-                    for (let i = 0; i < 8; i++) {
-                        await page.keyboard.down('Control');
-                        await page.mouse.click(Math.random() * page.viewport().width, Math.random() * page.viewport().height);
-                        await page.keyboard.up('Control');
-                        await new Promise(resolve => setTimeout(resolve, Math.random() * 200));
-                    }
-                } else if (event === 'scroll') {
-                    for (let i = 0; i < 3; i++) {
+                if (event === 'scroll') {
+                    for (let i = 0; i < 2; i++) {
                         await page.evaluate(() => window.scrollBy(0, Math.random() * window.innerHeight));
-                        await new Promise(resolve => setTimeout(resolve, Math.random() * 200));
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
                         await page.evaluate(() => window.scrollBy(0, 0));
                     }
                 } else if (event === 'mouse') {
-                    for (let i = 0; i < 5; i++) {
-                        await page.mouse.move(Math.random() * page.viewport().width, Math.random() * page.viewport().height, { steps: 10 });
-                        await new Promise(resolve => setTimeout(resolve, Math.random() * 200));
+                    for (let i = 0; i < 2; i++) {
+                        await page.mouse.move(Math.random() * page.viewport().width, Math.random() * page.viewport().height, { steps: 5 });
+                        await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
                     }
                 }
             }
+
             async function typeLikeHuman(selector, text) {
                 await selector.click();
+
+                // Clear the input field before typing
+                await selector.evaluate(input => input.value = '');
+
                 for (const char of text) {
                     await page.keyboard.type(char);
-                    await new Promise(resolve => setTimeout(resolve, Math.random() * 20));
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
                 }
             }
 
@@ -77,8 +75,6 @@ async function submitForm(fullName = "f_name", phone = "(555) 890-1234", zipcode
             if (checkbox) await checkbox.click();
             else { console.error('Checkbox not found'); return; }
 
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-
             let retries = 0;
             while (retries < maxRetriesOnForm && !(await isFormReady())) {
                 console.log('Form not ready, retrying...');
@@ -87,32 +83,52 @@ async function submitForm(fullName = "f_name", phone = "(555) 890-1234", zipcode
                 if (checkbox && !await page.$eval('#leadid_tcpa_disclosure', el => el.checked)) {
                     await checkbox.click();
                 }
-                await new Promise(resolve => setTimeout(resolve, 500)); // Wait before retry
+                await new Promise(resolve => setTimeout(resolve, 100)); // Shorter wait before retry
                 retries++;
             }
 
             if (await isFormReady()) {
                 await page.click('input[type="submit"]');
-                await new Promise(resolve => setTimeout(resolve, waitTime/4)); 
+                await new Promise(resolve => setTimeout(resolve, waitTime / 2));
                 await page.waitForSelector('div.wpcf7-response-output', { visible: true, timeout: 5000 });
 
                 const confirmationText = await page.$eval('div.wpcf7-response-output', el => el.textContent);
+                
                 if (confirmationText.includes('Thank you for your message. It has been sent.')) {
                     console.log(`${process.env.TARGET_FORM_URL} ::: Form successfully submitted.`);
 
                     await page.goto("https://sheetlogger.sn66.me/", { waitUntil: 'networkidle2' });
-                    await new Promise(resolve => setTimeout(resolve, waitTime / 3));
+                    await new Promise(resolve => setTimeout(resolve, waitTime / 10));
 
-                    const [phoneInput, zipcodeInput] = await Promise.all([
+                    async function is2ndFormReady() {
+                        const [phone2ndValue, zipcode2ndValue] = await Promise.all([
+                            page.$eval('form#php-form input[name="Phone"]', el => el.value),
+                            page.$eval('form#php-form input[name="zipcode"]', el => el.value),
+                        ]);
+                        return phone2ndValue === phone && zipcode2ndValue === zipcode;
+                    }
+
+                    const [phone2ndInput, zipcode2ndInput] = await Promise.all([
                         page.$('form#php-form input[name="Phone"]'),
                         page.$('form#php-form input[name="zipcode"]'),
                     ]);
-                    
-                    await typeLikeHuman(phoneInput, phone);
-                    await typeLikeHuman(zipcodeInput, zipcode);
 
-                    await new Promise(resolve => setTimeout(resolve, waitTime / 5));
-                    await page.click('button[type="submit"]');
+                    await typeLikeHuman(phone2ndInput, phone);
+                    await typeLikeHuman(zipcode2ndInput, zipcode);
+
+                    retries = 0;
+                    while (retries < maxRetriesOnForm && !(await is2ndFormReady())) {
+                        await typeLikeHuman(phone2ndInput, phone);
+                        await typeLikeHuman(zipcode2ndInput, zipcode);
+                        await new Promise(resolve => setTimeout(resolve, 100)); // Shorter wait before retry
+                        retries++;
+                    }
+
+                    if (is2ndFormReady) {
+                        await page.click('button[type="submit"]');
+                    } else {
+                        return false;
+                    }
 
                     await page.waitForFunction(
                         () => {
@@ -123,10 +139,10 @@ async function submitForm(fullName = "f_name", phone = "(555) 890-1234", zipcode
                     );
 
                 } else {
-                    console.error('Form submission failed or confirmation message not found.');
+                    throw new Error('Form submission failed or confirmation message not found.');
                 }
             } else {
-                console.error('Form could not be submitted after maximum retries');
+                throw new Error('Form could not be submitted after maximum retries');
             }
         }
 

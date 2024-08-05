@@ -3,7 +3,7 @@ let proxy = {};
 let proxyToken = process.env.WEBSHARE_API_KEY;
 async function getProxyForLocation(country, city) {
     const url = new URL('https://proxy.webshare.io/api/v2/proxy/list/');
-    url.searchParams.append('mode', 'backbone');
+    url.searchParams.append('mode', 'direct'); // mode = backbone for 7$ plan
     url.searchParams.append('page', '1');
     url.searchParams.append('page_size', '25');
     url.searchParams.append('country_code__in', 'US');
