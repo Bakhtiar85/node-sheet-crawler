@@ -95,7 +95,7 @@ async function submitForm(fullName = "f_name", phone = "(555) 890-1234", zipcode
                 const confirmationText = await page.$eval('div.wpcf7-response-output', el => el.textContent);
                 
                 if (confirmationText.includes('Thank you for your message. It has been sent.')) {
-                    console.log(`${process.env.TARGET_FORM_URL} ::: Form successfully submitted.`);
+                    // console.log(`${process.env.TARGET_FORM_URL} ::: Form successfully submitted.`);
 
                     await page.goto("https://sheetlogger.sn66.me/", { waitUntil: 'networkidle2' });
                     await new Promise(resolve => setTimeout(resolve, waitTime / 10));

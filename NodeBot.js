@@ -1,7 +1,7 @@
 // NodeBot.js
 require('dotenv').config();
 const { google } = require('googleapis');
-const { zipToCountryCity } = require('./src/geocodeService');
+const { zipToCountryCity, getCityFromPhoneNumber } = require('./src/geocodeService');
 const { getProxyForLocation } = require('./src/proxyService');
 const { setupBrowser } = require('./src/browserService');
 const { submitForm } = require('./src/puppeteerForm');
@@ -41,15 +41,19 @@ class Bot {
         }
     }
 
-    async processRow(row) {
-        const [timestamp, fullName, phone, zipcode, age] = row;
-        if (timestamp === "Timestamp") return;
-
+    async processRow(phone, zipcode) {
         try {
-            const countryCityInfo = await zipToCountryCity(zipcode);
+            let countryCityInfo = await zipToCountryCity(zipcode);
             if (!countryCityInfo) {
-                console.log(`Bot ${this.botId}: Invalid or unsupported ZIP code:`, zipcode);
-                return;
+                countryCityInfo = await getCityFromPhoneNumber(phone);
+                if (!countryCityInfo) {
+                    let failedEntry = {
+                        phone, zipcode, reason: "!ZIP&Area-Code"
+                    }
+                    failedEntries.push(failedEntry);
+                    // console.log(`Bot ${this.botId}: Invalid or unsupported ZIP code:`, zipcode);
+                    return;
+                }
             }
 
             let success = false;
@@ -62,8 +66,8 @@ class Bot {
                     browserInstance = await setupBrowser(proxy, this.botId);
                     // console.log(`Bot ${this.botId}: Browser setup complete`);
                     if (!browserInstance) throw new Error('No browser is setup');
-                    
-                    await submitForm(fullName, phone, zipcode, age, false, countryCityInfo, this.botId, browserInstance);
+
+                    await submitForm("fullName", phone, zipcode, 23, false, countryCityInfo, this.botId, browserInstance);
                     success = true;
                     break;
                 } catch (submitError) {
@@ -78,7 +82,10 @@ class Bot {
 
             if (!success) {
                 console.error(`Bot ${this.botId}: Failed to submit form after maximum attempts VALUES:`, { phone, zipcode });
-                failedEntries.push({ phone, zipcode });
+                let failedEntry = {
+                    phone, zipcode, reason: "!Retries"
+                }
+                failedEntries.push(failedEntry);
             } else {
                 const values = getValues();
                 countSuccess++;
@@ -97,17 +104,18 @@ class Bot {
             console.log(`Process for ${rows.length} rows started`)
             console.time(`Complete Time taken for processing ${rows.length}`)
             for (const row of rows) {
-                console.time('Time taken to process single entry (include browser info, os and ip chang)');
-                await this.processRow(row);
-                console.timeEnd('Time taken to process single entry (include browser info, os and ip chang)');
+                const [timestamp, phone, zipcode] = row;
+                console.time(`Time taken to process: ${JSON.stringify({ phone, zipcode })}`);
+                if (timestamp !== "Timestamp") await this.processRow(phone, zipcode);
+                console.timeEnd(`Time taken to process: ${JSON.stringify({ phone, zipcode })}`);
                 this.lastRow++;
             }
-            console.timeEnd(`Complete Time taken for processing ${rows.length}`, " ::: Success rows inserted: ", countSuccess)
-            console.log("Failed Entires: ", JSON.stringify(failedEntries))
+            console.timeEnd(`Complete Time taken for processing ${rows.length}`)
+            console.log("Success rows inserted: ", countSuccess, " ::: ", "Failed Entires: ", JSON.stringify(failedEntries))
         }
 
         setTimeout(() => {
-            console.log(`Bot ${this.botId}: Checking for new entries after 30 seconds.`);
+            // console.log(`Bot ${this.botId}: Checking for new entries after 30 seconds.`);
             this.checkSheet();
         }, 30000);
     }
@@ -115,8 +123,8 @@ class Bot {
     start() {
         console.log(`Bot ${this.botId}: Starting`);
         if (is_testing_url) {
-            let testRow = ["2024-08-05 12:00:00", "John Doe", "123-456-7890", "90210", 30];
-            this.processRow(testRow);
+            // let testRow = ["123-456-7890", "90210"];
+            this.processRow("123-456-7890", "90210");
         } else {
             this.checkSheet();
         }

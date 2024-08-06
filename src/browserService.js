@@ -1,12 +1,19 @@
 const puppeteer = require('puppeteer');
-const UserAgent = require('user-agents');
+
+const isProxyPlanFree = process.env.IS_PROXY_PLAN_FREE === "true";
+let proxyServerString = null;
 
 async function setupBrowser(proxy, botId) {
+    if (isProxyPlanFree) {
+        proxyServerString = `${proxy.server}:${proxy.port}`; // with 10 free proxies
+    } else {
+        proxyServerString = `http://p.webshare.io:${proxy.port}`; // with 7$ plan
+    }
+
     const browser = await puppeteer.launch({
         headless: process.env.HEADLESS === 'true',
         args: [
-            // `--proxy-server=http://p.webshare.io:${proxy.port}`, // with 7$ plan
-            `--proxy-server=${proxy.server}:${proxy.port}`, // with 10 free proxies
+            `--proxy-server=${proxyServerString}`,
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-gpu',
@@ -81,8 +88,8 @@ function generateUniqueUserAgent(botId) {
     const browserIndex = Math.floor(Math.random() * browsers.length);
 
     const platform = platforms[platformIndex];
-    const browser = browsers[browserIndex];
-
+    let browser = browsers[browserIndex];
+    
     // console.log(platformIndex, "<<<<, platform ,>>>>", platform, " <<", botId, ">> ", browserIndex, "<<<<, browser ,>>>>", browser);
 
     let userAgent;
@@ -116,6 +123,9 @@ function generateUniqueUserAgent(botId) {
         case 'Chrome OS':
             osInfo = 'X11; CrOS x86_64 14526.102.0';
             break;
+        default:
+            console.warn(`Unknown platform: ${platform}`);
+            osInfo = 'Windows NT 10.0; Win64; x64'; // Default to Windows 10
     }
 
     switch (browser) {
@@ -134,6 +144,16 @@ function generateUniqueUserAgent(botId) {
         case 'Opera':
             userAgent = `Mozilla/5.0 (${osInfo}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${generateVersion()}.0.0.0 Safari/537.36 OPR/${generateVersion()}.0.${generateVersion()}.0`;
             break;
+        default:
+            if (platform.includes('Windows')) {
+                console.warn(`Unknown browser for Windows: ${browser}. Defaulting to Edge.`);
+                browser = 'Edge';
+                userAgent = `Mozilla/5.0 (${osInfo}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${generateVersion()}.0.0.0 Safari/537.36 Edg/${generateVersion()}.0.${generateVersion()}.0`;
+            } else {
+                console.warn(`Unknown browser: ${browser}. Defaulting to Chrome.`);
+                browser = 'Chrome';
+                userAgent = `Mozilla/5.0 (${osInfo}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${generateVersion()}.0.0.0 Safari/537.36`;
+            }
     }
 
     return { userAgent, platform, osInfo };
