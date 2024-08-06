@@ -106,7 +106,7 @@ class Bot {
 
         if (rows.length > 0) {
             console.log(`Process for ${rows.length} rows started`)
-            console.time(`Complete Time taken for processing ${rows.length}`)
+            console.time(`Complete Time taken for processing ${rows.length} entries: `)
             for (const row of rows) {
                 const [timestamp, phone, zipcode] = row;
                 console.time(`Time taken to process: ${JSON.stringify({ phone, zipcode })}`);
@@ -114,7 +114,7 @@ class Bot {
                 console.timeEnd(`Time taken to process: ${JSON.stringify({ phone, zipcode })}`);
                 this.lastRow++;
             }
-            console.timeEnd(`Complete Time taken for processing ${rows.length}`)
+            console.timeEnd(`Complete Time taken for processing ${rows.length} entries: `)
             console.log("Success rows inserted: ", countSuccess, " ::: ", "Failed Entires: ", JSON.stringify(failedEntries))
         }
 
