@@ -47,12 +47,16 @@ class Bot {
             if (!countryCityInfo) {
                 countryCityInfo = await getCityFromPhoneNumber(phone);
                 if (!countryCityInfo) {
-                    let failedEntry = {
-                        phone, zipcode, reason: "!ZIP&Area-Code"
+                    countryCityInfo = {
+                        country: 'US',
+                        city: 'Bridgeport'
                     }
-                    failedEntries.push(failedEntry);
-                    // console.log(`Bot ${this.botId}: Invalid or unsupported ZIP code:`, zipcode);
-                    return;
+                    // let failedEntry = {
+                    //     phone, zipcode, reason: "!ZIP&Area-Code"
+                    // }
+                    // failedEntries.push(failedEntry);
+                    // // console.log(`Bot ${this.botId}: Invalid or unsupported ZIP code:`, zipcode);
+                    // return;
                 }
             }
 
