@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 
-const waitTime = Math.random() * 20 + 50; // 50s to 100s
+const waitTime = Math.random() * 20 + 5;
 const maxRetriesOnForm = 2;
 // Array of possible referrer URLs
 const referrers = [

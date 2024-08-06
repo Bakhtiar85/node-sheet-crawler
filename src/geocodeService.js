@@ -29,21 +29,21 @@ async function getCityFromPhoneNumber(phoneNumber) {
             return null;
         }
     } else {
-        throw new Error('Invalid phone number format.');
+        // console.log('Invalid phone number format.');
+        return null;
     }
 }
 
 function extractAreaCode(phoneNumber) {
-    // Remove all non-digit characters
-    const digitsOnly = phoneNumber.replace(/\D/g, '');
+    // Regular expression to match the area code in various formats
+    const regex = /(?:\+1\s*)?\(?(\d{3})\)?[\s-]?/;
+    const match = phoneNumber.match(regex);
 
-    // Check if it's a valid US number (assuming US numbers here)
-    if (digitsOnly.length === 10 || (digitsOnly.length === 11 && digitsOnly[0] === '1')) {
-        // Return the area code (first 3 digits after the country code if present)
-        return digitsOnly.slice(-10, -7);
+    if (match) {
+        return match[1];
+    } else {
+        return null;
     }
-
-    return null; // Return null if the phone number format is invalid
 }
 
 function findCityByAreaCode(areaCode) {

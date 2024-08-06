@@ -115,9 +115,10 @@ class Bot {
         }
 
         setTimeout(() => {
-            // console.log(`Bot ${this.botId}: Checking for new entries after 30 seconds.`);
+            // console.log(`Bot ${this.botId}: Checking for new entries after 3 seconds.`);
+            countSuccess = 0;
             this.checkSheet();
-        }, 30000);
+        }, 3000);
     }
 
     start() {
