@@ -1,11 +1,19 @@
 const axios = require('axios');
-let proxy = {};
+const isProxyPlanFree = process.env.IS_PROXY_PLAN_FREE === "true";
 let proxyToken = process.env.WEBSHARE_API_KEY;
+let proxy = {};
+let proxyMode = null;
 async function getProxyForLocation(country, city) {
+    if (isProxyPlanFree) {
+        proxyMode = "direct"; // with 10 free proxies
+    } else {
+        proxyMode = "backbone"; // with 7$ plan
+    }
+
     const url = new URL('https://proxy.webshare.io/api/v2/proxy/list/');
-    url.searchParams.append('mode', 'backbone'); // mode = backbone for 7$ plan
+    url.searchParams.append('mode', proxyMode); // mode = backbone for 7$ plan
     url.searchParams.append('page', '1');
-    url.searchParams.append('page_size', '25');
+    url.searchParams.append('page_size', '125');
     url.searchParams.append('country_code__in', 'US');
     // console.log("proxyToken", proxyToken)
     try {
@@ -15,7 +23,7 @@ async function getProxyForLocation(country, city) {
                 Authorization: `Token ${String(proxyToken)}`
             }
         });
- 
+
         const response = await req.json()
 
         // console.log("DATA:>>>>", response.results)
