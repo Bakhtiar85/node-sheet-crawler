@@ -49,7 +49,8 @@ class Bot {
                 if (!countryCityInfo) {
                     countryCityInfo = {
                         country: 'US',
-                        city: 'Bridgeport'
+                        state: 'New York',
+                        city: 'New York City'
                     }
                     // let failedEntry = {
                     //     phone, zipcode, reason: "!ZIP&Area-Code"
@@ -64,18 +65,18 @@ class Bot {
             for (let attempt = 0; attempt < this.retryAttempts; attempt++) {
                 let browserInstance = null;
                 try {
-                    const { country, city } = countryCityInfo;
-                    const proxy = await getProxyForLocation(country, city);
-                    if (!proxy) throw new Error('No proxy found for location');
+                    const { country, state, city } = countryCityInfo;
+                    const proxy = await getProxyForLocation(country, state, city);
+                    if (!proxy) return // throw new Error('No proxy found for location');
                     browserInstance = await setupBrowser(proxy, this.botId);
                     // console.log(`Bot ${this.botId}: Browser setup complete`);
-                    if (!browserInstance) throw new Error('No browser is setup');
+                    if (!browserInstance) return // throw new Error('No browser is setup');
 
                     await submitForm("fullName", phone, zipcode, 23, false, countryCityInfo, this.botId, browserInstance);
                     success = true;
                     break;
                 } catch (submitError) {
-                    console.error(`Bot ${this.botId}: Error submitting form (attempt ${attempt + 1}):`, submitError);
+                    // console.error(`Bot ${this.botId}: Error submitting form (attempt ${attempt + 1}):`, submitError);
                 } finally {
                     if (browserInstance && !is_testing_url) {
                         let { browser } = browserInstance

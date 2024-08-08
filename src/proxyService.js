@@ -1,9 +1,58 @@
+const fs = require('fs');
 const axios = require('axios');
 const isProxyPlanFree = process.env.IS_PROXY_PLAN_FREE === "true";
 let proxyToken = process.env.WEBSHARE_API_KEY;
+let readProxiesFromFile = true;
+let staticProxyData = null;
+let jsonProxyData = null;
 let proxy = {};
 let proxyMode = null;
-async function getProxyForLocation(country, city) {
+async function getProxyForLocation(country, state, city) {
+    if (readProxiesFromFile) {
+        try {
+            if (!staticProxyData) {
+                // Read the JSON file
+                jsonProxyData = fs.readFileSync('./misc/ips.json', 'utf8');
+            }
+
+            // Parse the JSON data
+            staticProxyData = JSON.parse(jsonProxyData);
+
+            // Ensure data is an array
+            if (!Array.isArray(staticProxyData)) {
+                console.error('The JSON data is not an array');
+                return null;
+            }
+
+            // Find the entry with matching city_name or state
+            const matchedEntry = staticProxyData.find(entry => {
+                // Check if city_name exists and matches
+                if (entry && entry.city_name && typeof entry.city_name === 'string') {
+                    if (entry.city_name.toLowerCase() === city.toLowerCase()) {
+                        return true;
+                    }
+                }
+
+                // If city doesn't match, check if state matches
+                if (entry && entry.city_name && typeof entry.city_name === 'string') {
+                    return entry.city_name.toLowerCase() === state.toLowerCase();
+                }
+
+                return false;
+            });
+
+            if (matchedEntry) {
+                matchedEntry.password = "q8jvoil91b2g";
+                console.log(state, city, " ::MATCHED_ENTRY: ", matchedEntry)
+                return matchedEntry;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error('Error reading or parsing the JSON file:', error);
+            return null;
+        }
+    }
     if (isProxyPlanFree) {
         proxyMode = "direct"; // with 10 free proxies
     } else {

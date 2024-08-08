@@ -10,10 +10,11 @@ async function zipToCountryCity(zipCode) {
     try {
         const response = await axios.get(url);
         const country = response.data['country abbreviation'];
+        const state = response.data.places[0]['state'];
         const city = response.data.places[0]['place name'];
 
-        if (!country || !city) throw new Error('Location data incomplete');
-        return { country, city };
+        if (!country || !state || !city) throw new Error('Location data incomplete');
+        return { country, state, city };
     } catch (error) {
         return null;
     }
@@ -24,7 +25,7 @@ async function getCityFromPhoneNumber(phoneNumber) {
     if (areaCode) {
         const cityInfo = findCityByAreaCode(areaCode);
         if (cityInfo) {
-            return { country: 'US', city: cityInfo.city };
+            return { country: 'US', state: cityInfo.state, city: cityInfo.city };
         } else {
             return null;
         }
