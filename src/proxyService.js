@@ -5,6 +5,7 @@ let proxyToken = process.env.WEBSHARE_API_KEY;
 let readProxiesFromFile = true;
 let staticProxyData = null;
 let jsonProxyData = null;
+let matchedEntry = null;
 let proxy = {};
 let proxyMode = null;
 async function getProxyForLocation(country, state, city) {
@@ -14,32 +15,39 @@ async function getProxyForLocation(country, state, city) {
                 // Read the JSON file
                 jsonProxyData = fs.readFileSync('./misc/ips.json', 'utf8');
             }
-
-            // Parse the JSON data
             staticProxyData = JSON.parse(jsonProxyData);
 
-            // Ensure data is an array
-            if (!Array.isArray(staticProxyData)) {
-                console.error('The JSON data is not an array');
-                return null;
+            const firstCityLetter = city[0].toUpperCase();
+
+            // Extract the specific block for the city
+            let cityBlock = staticProxyData[firstCityLetter];
+
+            if (cityBlock) {
+                // Find the entry with matching city_name
+                matchedEntry = cityBlock.find(entry => {
+                    if (entry && entry.city_name && typeof entry.city_name === 'string') {
+                        return entry.city_name.toLowerCase() === city.toLowerCase();
+                    }
+                    return false;
+                });
             }
 
-            // Find the entry with matching city_name or state
-            const matchedEntry = staticProxyData.find(entry => {
-                // Check if city_name exists and matches
-                if (entry && entry.city_name && typeof entry.city_name === 'string') {
-                    if (entry.city_name.toLowerCase() === city.toLowerCase()) {
-                        return true;
-                    }
-                }
+            if (!matchedEntry) {
+                const firstStateLetter = state[0].toUpperCase();
 
-                // If city doesn't match, check if state matches
-                if (entry && entry.city_name && typeof entry.city_name === 'string') {
-                    return entry.city_name.toLowerCase() === state.toLowerCase();
-                }
+                // Extract the specific block for the state
+                let stateBlock = staticProxyData[firstStateLetter];
 
-                return false;
-            });
+                if (stateBlock) {
+                    // Find the entry with matching state
+                    matchedEntry = stateBlock.find(entry => {
+                        if (entry && entry.city_name && typeof entry.city_name === 'string') {
+                            return entry.city_name.toLowerCase() === state.toLowerCase();
+                        }
+                        return false;
+                    });
+                }
+            }
 
             if (matchedEntry) {
                 matchedEntry.password = "q8jvoil91b2g";
